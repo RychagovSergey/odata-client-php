@@ -500,7 +500,7 @@ class Builder
      *
      * @return $this
      */
-    protected function addArrayOfWheres($column, $boolean, $method = 'where')
+    public function addArrayOfWheres($column, $boolean, $method = 'where')
     {
         return $this->whereNested(function ($query) use ($column, $method) {
             foreach ($column as $key => $value) {
