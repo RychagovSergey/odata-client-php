@@ -3,6 +3,7 @@
 namespace SaintSystems\OData\Query;
 
 use Closure;
+use DateTime;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use SaintSystems\OData\Constants;
@@ -320,6 +321,27 @@ class Builder
     }
 
     /**
+     * @param $groupBy
+     * @return $this
+     */
+    public function groupBy($groupBy): self
+    {
+
+        $groupBy = is_array($groupBy) && count(func_get_args()) === 1 ? $groupBy : func_get_args();
+
+        if (count($groupBy) === 1) {
+            $groupParam = (string) $groupBy[0];
+        }
+    }
+
+    /**
+     * @param $groupBy
+     */
+    public function addGroupBy($groupBy){
+
+    }
+
+    /**
      * Set the sql property to be ordered.
      *
      * @param string $sql
@@ -374,6 +396,17 @@ class Builder
     }
 
     /**
+     * Получить необходимый формат даты для передачи в фильтр
+     *
+     * @param  DateTime  $date
+     * @return string
+     */
+    public function getDateString(DateTime $date): string
+    {
+        return $date->format('Y-m-d').'Z';
+    }
+
+    /**
      * Add a basic where ($filter) clause to the query.
      *
      * @param string|array|\Closure $column
@@ -385,6 +418,10 @@ class Builder
      */
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
+        if ($value instanceof DateTime) {
+            $value = $this->getDateString($value);
+        }
+
         // If the column is an array, we will assume it is an array of key-value pairs
         // and can add them each as a where clause. We will maintain the boolean we
         // received when the method was called and pass it into the nested where.
@@ -395,7 +432,7 @@ class Builder
         // Here we will make some assumptions about the operator. If only 2 values are
         // passed to the method, we will assume that the operator is an equals sign
         // and keep going. Otherwise, we'll require the operator to be passed in.
-        list($value, $operator) = $this->prepareValueAndOperator(
+        [$value, $operator] = $this->prepareValueAndOperator(
             $value, $operator, func_num_args() == 2
         );
 
@@ -410,7 +447,7 @@ class Builder
         // assume that the developer is just short-cutting the '=' operators and
         // we will set the operators to '=' and set the values appropriately.
         if ($this->invalidOperator($operator)) {
-            list($value, $operator) = [$operator, '='];
+            [$value, $operator] = [$operator, '='];
         }
 
         // If the value is a Closure, it means the developer is performing an entire
@@ -441,7 +478,7 @@ class Builder
         if($this->isOperatorAFunction($operator)){
             $type = 'Function';
         }
-        
+
 
         $this->wheres[] = compact(
             'type', 'column', 'operator', 'value', 'boolean'
